@@ -1,0 +1,163 @@
+---
+import manropeLatin from "@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url";
+
+import Rule from "../components/rule.astro";
+import { PageNav, SectionNav, type NavSection } from "../components/section-nav.tsx";
+import "../styles.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Project pages pass their `##` sections: the sidebar shows them and the top bar shows "Go back". */
+  sections?: readonly NavSection[];
+}
+
+const { title, description = "Jan — a product-minded software engineer.", sections } = Astro.props;
+const links = [
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/jan-arnez/" },
+  { label: "Email", href: "mailto:arnezjan8@gmail.com" },
+];
+const pathname = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astro.url.pathname}/`;
+---
+
+<!doctype html>
+<html lang="en" class="h-full antialiased">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <title>{title}</title>
+    <link rel="preload" href={manropeLatin} as="font" type="font/woff2" crossorigin />
+    <script is:inline>
+      // A page reached through a cross-document view transition skips the first-load
+      // blur-in; the transition animates it instead (see `data-navigated` in styles.css).
+      addEventListener("pagereveal", (event) => {
+        if (event.viewTransition) {
+          document.documentElement.dataset.navigated = "";
+        }
+      });
+
+      // Cover media only morphs between pages when it is on screen as you leave. If you have
+      // scrolled past it, both sides drop their `view-transition-name` so the media just takes
+      // part in the normal page fade instead of flying in from off screen.
+      const SKIP_MORPH = "skip-media-morph";
+      const setMorph = (enabled) => {
+        for (const media of document.querySelectorAll(".project-media")) {
+          media.dataset.vtName ??= media.style.viewTransitionName;
+          media.style.viewTransitionName = enabled ? media.dataset.vtName : "none";
+        }
+      };
+      const isOnScreen = (element) => {
+        const { top, bottom, left, right } = element.getBoundingClientRect();
+        return bottom > 0 && top < innerHeight && right > 0 && left < innerWidth;
+      };
+      addEventListener("pageswap", (event) => {
+        if (!event.viewTransition) {return;}
+        const media = document.querySelectorAll(".project-media");
+        // Home has many cards: the clicked one is always visible. A project page has one hero.
+        const anyVisible = [...media].some(isOnScreen);
+        if (media.length > 0 && !anyVisible) {
+          setMorph(false);
+          sessionStorage.setItem(SKIP_MORPH, "1");
+        }
+      });
+      addEventListener("pagereveal", (event) => {
+        const skip = sessionStorage.getItem(SKIP_MORPH) !== null;
+        sessionStorage.removeItem(SKIP_MORPH);
+        if (!event.viewTransition || !skip) {return;}
+        setMorph(false);
+        event.viewTransition.finished.finally(() => setMorph(true));
+      });
+      // A page restored from the back/forward cache keeps whatever `pageswap` changed.
+      addEventListener("pageshow", (event) => {
+        if (event.persisted) {setMorph(true);}
+      });
+    </script>
+  </head>
+  <body class="flex min-h-full flex-col overflow-x-clip">
+    <!--
+      Vertical guide lines on the edges of the 1240px content column, plus one down the middle
+      except on project pages, where it would run behind the media and text (horizontal ones: rule.astro).
+    -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-y-0 left-1/2 -z-10 hidden w-full max-w-[1240px] -translate-x-1/2 border-x border-foreground/10 xl:block"
+    >
+      {
+        sections === undefined && (
+          <div class="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-foreground/10" />
+        )
+      }
+    </div>
+
+    <!-- Fixed top bar; click-through except for its links so it never blocks the page. -->
+    <header
+      class="pointer-events-none fixed inset-x-0 top-0 z-10 flex items-center justify-between gap-8 bg-background/80 p-4 text-[15px] backdrop-blur-sm 3xl:bg-transparent 3xl:backdrop-blur-none"
+    >
+      {
+        sections === undefined ? (
+          <span />
+        ) : (
+          <a
+            href="/"
+            class="pointer-events-auto flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <svg aria-hidden="true" viewBox="0 0 16 16" class="size-4 fill-none stroke-current">
+              <path d="M10 3.5 5.5 8l4.5 4.5" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            Go back
+          </a>
+        )
+      }
+      <!-- Below the sidebar breakpoint, the page links live in the top bar. -->
+      <div class="pointer-events-auto 3xl:hidden [&_ul]:flex-row [&_ul]:gap-4">
+        <PageNav current={pathname} />
+      </div>
+    </header>
+
+    <!--
+      Fixed left sidebar in the page margin (only from 1600px, where the 1240px column leaves
+      room). Its top lines the first item up with the page headline: top bar + main padding
+      (72px) + headline offset (260px pages, 128px projects) + half a line.
+    -->
+    <aside
+      class:list={[
+        "fixed left-4 z-10 hidden 3xl:block",
+        sections === undefined ? "top-[353px]" : "top-[221px]",
+      ]}
+    >
+      {
+        sections === undefined ? (
+          <PageNav current={pathname} />
+        ) : (
+          <SectionNav sections={sections} client:load />
+        )
+      }
+    </aside>
+
+    <main
+      class="mx-auto flex w-full max-w-[1240px] flex-col gap-12 px-4 pt-18 pb-8 xl:pb-16"
+    >
+      <slot />
+
+      <Rule center={sections === undefined} />
+
+      <footer class="flex flex-wrap gap-x-6 gap-y-2">
+        {
+          links.map((link) => (
+            <a
+              href={link.href}
+              class="text-muted-foreground transition-colors hover:text-primary"
+              target={link.href.startsWith("http") ? "_blank" : undefined}
+              rel={link.href.startsWith("http") ? "noreferrer" : undefined}
+            >
+              {link.label}
+            </a>
+          ))
+        }
+      </footer>
+    </main>
+  </body>
+</html>

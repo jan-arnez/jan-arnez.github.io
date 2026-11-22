@@ -1,0 +1,15 @@
+---
+import { Hero } from "../components/hero.tsx";
+import { ProjectGrid } from "../components/project-grid.tsx";
+import Rule from "../components/rule.astro";
+import Base from "../layouts/base.astro";
+import { getProjects } from "../lib/projects.ts";
+
+const projects = await getProjects();
+---
+
+<Base title="Jan — Software Engineer">
+  <Hero />
+  <Rule />
+  <ProjectGrid projects={projects} />
+</Base>

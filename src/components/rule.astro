@@ -1,0 +1,21 @@
+---
+/**
+ * Full-bleed horizontal guide line with crosshairs where it meets the vertical guides
+ * at the edges of the content column (see the guides in src/layouts/base.astro).
+ * Place it directly inside <main>; it cancels main's side padding to reach the column edges.
+ */
+interface Props {
+  class?: string;
+  /** Crosshair at the middle guide; off on project pages, which have no middle guide. */
+  center?: boolean;
+}
+
+const { class: className, center = true } = Astro.props;
+---
+
+<div aria-hidden="true" class:list={["relative -mx-4 h-px", className]}>
+  <div class="absolute top-0 left-1/2 h-px w-screen -translate-x-1/2 bg-foreground/10"></div>
+  <span class="crosshair absolute top-0 left-0 hidden -translate-1/2 xl:block"></span>
+  {center && <span class="crosshair absolute top-0 left-1/2 hidden -translate-1/2 xl:block" />}
+  <span class="crosshair absolute top-0 right-0 hidden translate-x-1/2 -translate-y-1/2 xl:block"></span>
+</div>

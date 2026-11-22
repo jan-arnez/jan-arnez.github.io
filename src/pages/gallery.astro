@@ -1,0 +1,20 @@
+---
+import { GalleryGrid } from "../components/gallery-grid.tsx";
+import Rule from "../components/rule.astro";
+import { gallery } from "../data/gallery.ts";
+import Base from "../layouts/base.astro";
+---
+
+<Base title="Gallery — Jan" description="Hackathons, competitions and events, in pictures.">
+  <div class="flex flex-col gap-8 lg:pt-42 xl:grid xl:grid-cols-2">
+    <h1 class="text-5xl leading-[1.1] font-semibold tracking-tight md:text-6xl">
+      Moments from <em class="text-primary">hackathons</em> and beyond
+    </h1>
+    <p class="max-w-md self-end text-lg leading-relaxed text-muted-foreground">
+      Late nights, a few wins and a lot of lessons. The rooms where I learned the most, straight
+      from my LinkedIn.
+    </p>
+  </div>
+  <Rule />
+  <GalleryGrid items={gallery} />
+</Base>

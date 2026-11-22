@@ -1,0 +1,91 @@
+---
+import type { GetStaticPaths } from "astro";
+import { render } from "astro:content";
+
+import { ProjectMedia } from "../../components/project-media.tsx";
+import Rule from "../../components/rule.astro";
+import Base from "../../layouts/base.astro";
+import { getProjects, projectHref, type Project } from "../../lib/projects.ts";
+
+export const getStaticPaths = (async () => {
+  const projects = await getProjects();
+  return projects.map((project, index) => ({
+    params: { name: project.id },
+    // Next project in display order, wrapping around to the first.
+    props: {
+      project,
+      next: projects[(index + 1) % projects.length] ?? project,
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  project: Project;
+  next: Project;
+}
+
+const { project, next } = Astro.props;
+const { data } = project;
+const { Content, headings } = await render(project);
+
+// `##` headings are the section labels: they feed the sidebar index.
+const sections = headings
+  .filter((heading) => heading.depth === 2)
+  .map((heading) => ({ id: heading.slug, label: heading.text }));
+
+const meta = [
+  ["Role", data.role ?? ""],
+  ["Timeline", data.timeline],
+  ["Scope", data.scope.join(", ")],
+  ["Collaborators", data.collaborators.join(", ")],
+].filter(([, value]) => value !== "");
+---
+
+<Base
+  title={`${data.title} — Jan`}
+  description={data.summary ?? data.headline}
+  sections={sections}
+>
+  <header class="flex flex-col gap-8 lg:pt-32 xl:grid xl:grid-cols-2">
+    <h1 class="text-5xl leading-[1.1] font-medium tracking-tight text-balance md:text-6xl">
+      {data.headline}
+    </h1>
+    {data.summary === undefined ? null : (
+      <p class="max-w-2xl text-xl leading-relaxed text-pretty text-muted-foreground xl:col-start-1">
+        {data.summary}
+      </p>
+    )}
+    <dl class="flex w-full flex-col justify-end gap-y-2 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+      {meta.map(([label, value]) => (
+        <div class="grid w-full grid-cols-6 gap-x-8">
+          <dt class="col-span-2 text-muted-foreground">{label}</dt>
+          <dd class="col-span-4">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  </header>
+
+  <ProjectMedia project={project} variant="hero" />
+
+  <Rule center={false} />
+
+  <div class="lg:grid lg:grid-cols-6 lg:gap-x-8">
+    <article class="prose lg:col-span-4 lg:col-start-2">
+      <Content />
+    </article>
+  </div>
+
+  {next.id === project.id ? null : (
+    <>
+      <Rule class="mt-24" center={false} />
+      <a href={projectHref(next)} class="group flex flex-col gap-4">
+        <span class="text-sm text-muted-foreground uppercase">
+          Next project
+        </span>
+        <span class="text-5xl leading-[1.1] font-medium tracking-tight transition-colors group-hover:text-primary md:text-6xl">
+          {next.data.title}
+        </span>
+      </a>
+    </>
+  )}
+</Base>

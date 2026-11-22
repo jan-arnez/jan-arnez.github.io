@@ -1,0 +1,218 @@
+@import "tailwindcss";
+@import "@fontsource-variable/manrope";
+
+/*
+ * Metric-matched fallback so text doesn't reflow when Manrope swaps in.
+ * Values are derived from Manrope's latin subset vs. Arial (lowercase-weighted average width):
+ * size-adjust = Manrope avg width / Arial avg width; overrides = Manrope metric / size-adjust.
+ */
+@font-face {
+  font-family: "Manrope Fallback";
+  src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("Helvetica");
+  size-adjust: 99.95%;
+  ascent-override: 106.65%;
+  descent-override: 30.01%;
+  line-gap-override: 0%;
+}
+
+:root {
+  --background: oklch(100% 0.00011 271.152);
+  --foreground: oklch(0% 0 0);
+  --muted-foreground: oklch(55.553% 0.00006 271.152);
+  --primary: oklch(62.669% 0.2339 32.347);
+}
+
+@theme inline {
+  --font-sans: "Manrope Variable", "Manrope Fallback", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+}
+
+@theme {
+  /* Wide enough for the left sidebar to sit beside the centered 1240px column. */
+  --breakpoint-3xl: 100rem;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+@keyframes blur-in {
+  from {
+    opacity: 0;
+    filter: blur(32px);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /*
+   * Direct page loads: content resolves from a soft blur. Pages reached through a view
+   * transition skip this (the transition animates them); `data-navigated` is set on
+   * `pagereveal` in src/layouts/base.astro. `backwards` drops the filter once done.
+   */
+  html:not([data-navigated]) body {
+    animation: blur-in 700ms cubic-bezier(0.2, 0, 0, 1) backwards;
+  }
+}
+
+/* Small "+" where a horizontal rule crosses a vertical guide (see src/components/rule.astro). */
+.crosshair {
+  @apply size-[11px] text-foreground/35;
+  background:
+    linear-gradient(currentColor, currentColor) center / 1px 100% no-repeat,
+    linear-gradient(currentColor, currentColor) center / 100% 1px no-repeat;
+}
+
+/* ---- Page changes: native cross-document view transitions ---- */
+
+@view-transition {
+  navigation: auto;
+}
+
+/* Shared cover media (card <-> hero, see src/components/project-media.tsx). */
+.project-media {
+  view-transition-class: project-media;
+}
+
+::view-transition-group(*) {
+  animation-duration: 500ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Old page clears quickly so the two layouts never overlap for long... */
+::view-transition-old(root) {
+  animation: fade-out 160ms ease-out both;
+}
+
+/* ...and the new page resolves from a blur, matching the first-load entrance. */
+::view-transition-new(root) {
+  animation: blur-in 500ms cubic-bezier(0.2, 0, 0, 1) 60ms both;
+}
+
+/*
+ * Shared cover media: morph the incoming snapshot only. Cross-fading old and new
+ * (cropped differently between card and hero) shows a ghosted double image.
+ */
+::view-transition-old(*.project-media) {
+  display: none;
+}
+
+::view-transition-new(*.project-media) {
+  height: 100%;
+  object-fit: cover;
+  overflow: clip;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ---- Project markdown (rendered by Astro, see src/pages/projects/[name].astro) ---- */
+
+.prose {
+  @apply flex flex-col gap-8;
+
+  /* `##` headings are section labels; space them like separate sections. */
+  /* A thin rule above each label marks where a section starts. */
+  & > h2 {
+    @apply scroll-mt-16 border-t border-foreground/10 pt-6 text-sm text-muted-foreground uppercase;
+  }
+  & > h2:not(:first-child) {
+    @apply mt-24;
+  }
+  /* The page's full-width rule already sits right above the first label. */
+  & > h2:first-child {
+    @apply border-t-0 pt-0;
+  }
+  & h3 {
+    @apply text-3xl leading-[1.15] font-medium tracking-tight text-balance md:text-4xl;
+  }
+  & h4 {
+    @apply text-xl font-medium tracking-tight;
+  }
+  & h5 {
+    @apply font-medium;
+  }
+  & p {
+    @apply text-lg leading-relaxed text-pretty text-muted-foreground;
+  }
+  & strong {
+    @apply font-medium text-foreground;
+  }
+  & a {
+    @apply text-foreground underline decoration-foreground/30 underline-offset-4 transition-colors hover:text-primary hover:decoration-primary;
+  }
+  & ul,
+  & ol {
+    @apply flex flex-col gap-2 pl-6 text-lg text-muted-foreground;
+  }
+  & ul {
+    @apply list-disc;
+  }
+  & ol {
+    @apply list-decimal;
+  }
+  & li > p {
+    @apply inline;
+  }
+  & blockquote {
+    @apply border-l-2 border-primary pl-6;
+  }
+  & blockquote p {
+    @apply text-2xl leading-snug font-medium tracking-tight text-balance text-foreground;
+  }
+  & figure {
+    @apply flex flex-col gap-3;
+  }
+  & figure > img,
+  & figure > video {
+    @apply w-full;
+  }
+  & figcaption {
+    @apply text-sm text-muted-foreground;
+  }
+  & .media-placeholder {
+    @apply flex aspect-video items-center justify-center bg-foreground/5 p-8 text-center text-sm text-muted-foreground;
+  }
+  & :not(pre) > code {
+    @apply bg-foreground/5 px-1 py-0.5 font-mono text-[0.9em];
+  }
+  & pre {
+    @apply overflow-x-auto p-4 text-sm;
+  }
+  & hr {
+    @apply border-foreground/10;
+  }
+  & table {
+    @apply w-full text-left;
+  }
+  & thead {
+    @apply text-muted-foreground;
+  }
+  & tr {
+    @apply border-b border-foreground/10;
+  }
+  & th,
+  & td {
+    @apply py-2 pr-8 font-normal;
+  }
+}
