@@ -6,9 +6,20 @@ import Base from "../layouts/base.astro";
 import { getProjects } from "../lib/projects.ts";
 
 const projects = await getProjects();
+
+const person = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Jan Arnež",
+  alternateName: "Jan Arnez",
+  url: Astro.site?.href,
+  jobTitle: "Software Engineer",
+  address: { "@type": "PostalAddress", addressCountry: "SI" },
+  sameAs: ["https://www.linkedin.com/in/jan-arnez/", "https://github.com/jan-arnez"],
+};
 ---
 
-<Base title="Jan — Software Engineer">
+<Base title="Jan Arnež — Product-minded Software Engineer" jsonLd={person}>
   <Hero />
   <Rule />
   <ProjectGrid projects={projects} />

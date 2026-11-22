@@ -8,11 +8,32 @@ import "../styles.css";
 interface Props {
   title: string;
   description?: string;
+  /** Share image: an absolute path in `public/`. Defaults to the generic 1200×630 `/og.png`. */
+  image?: string;
+  imageAlt?: string;
+  /** `article` for project pages, `website` for everything else. */
+  type?: "website" | "article";
+  /** Keeps the page out of search results (the 404 page). */
+  noindex?: boolean;
+  /** schema.org structured data, rendered as JSON-LD. */
+  jsonLd?: Record<string, unknown>;
   /** Project pages pass their `##` sections: the sidebar shows them and the top bar shows "Go back". */
   sections?: readonly NavSection[];
 }
 
-const { title, description = "Jan — a product-minded software engineer.", sections } = Astro.props;
+const {
+  title,
+  description = "Jan Arnež, a product-minded software engineer from Slovenia who designs and builds software and AI products.",
+  image = "/og.png",
+  imageAlt = "I’m Jan, a product-minded software engineer",
+  type = "website",
+  noindex = false,
+  jsonLd,
+  sections,
+} = Astro.props;
+const SITE_NAME = "Jan Arnež";
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const imageUrl = new URL(image, Astro.site);
 const links = [
   { label: "LinkedIn", href: "https://www.linkedin.com/in/jan-arnez/" },
   { label: "Email", href: "mailto:arnezjan8@gmail.com" },
@@ -25,10 +46,32 @@ const pathname = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astr
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="author" content={SITE_NAME} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <meta name="theme-color" content="#ffffff" />
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content={canonical} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <title>{title}</title>
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
     <link rel="preload" href={manropeLatin} as="font" type="font/woff2" crossorigin />
     <script is:inline>
       // A page reached through a cross-document view transition skips the first-load

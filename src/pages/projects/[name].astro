@@ -39,11 +39,18 @@ const meta = [
   ["Scope", data.scope.join(", ")],
   ["Collaborators", data.collaborators.join(", ")],
 ].filter(([, value]) => value !== "");
+
+// Video covers can't be share images, so those projects use the default one.
+const cover = data.cover.src;
+const shareImage = cover !== undefined && !/\.(?:mp4|webm|mov)$/iu.test(cover) ? cover : undefined;
 ---
 
 <Base
-  title={`${data.title} — Jan`}
+  title={`${data.title} — Jan Arnež`}
   description={data.summary ?? data.headline}
+  image={shareImage}
+  imageAlt={shareImage === undefined ? undefined : `${data.title} cover`}
+  type="article"
   sections={sections}
 >
   <header class="flex flex-col gap-8 lg:pt-32 xl:grid xl:grid-cols-2">
